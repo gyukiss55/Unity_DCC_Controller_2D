@@ -6,6 +6,8 @@ using UnityEngine.Networking;
 using TMPro;
 using System.Security.Cryptography.X509Certificates;
 
+using DCC_Controller_NS;
+
 /// https://docs.unity3d.com/ScriptReference/Networking.UnityWebRequest.Get.html
 /// https://docs.unity3d.com/ScriptReference/Networking.CertificateHandler.ValidateCertificate.html
 
@@ -77,13 +79,25 @@ namespace Utils_NS
                 {
                     case UnityWebRequest.Result.ConnectionError:
                     case UnityWebRequest.Result.DataProcessingError:
-                        Debug.LogError(pages[page] + ": Error: " + webRequest.error);
+                        {
+                            string log = pages[page] + ": Error: " + webRequest.error;
+                            Debug.LogError(log);
+                            ButtonHandler.GetInputFieldHandler().SetError(log);
+                        }
                         break;
                     case UnityWebRequest.Result.ProtocolError:
-                        Debug.LogError(pages[page] + ": HTTP Error: " + webRequest.error);
+                        {
+                            string log = pages[page] + ": HTTP Error: " + webRequest.error;
+                            Debug.LogError(log);
+                            ButtonHandler.GetInputFieldHandler().SetError(log);
+                        }
                         break;
                     case UnityWebRequest.Result.Success:
-                        Debug.Log(pages[page] + ":\nReceived: " + webRequest.downloadHandler.text);
+                        {
+                            string log = pages[page] + ":\nReceived: " + webRequest.downloadHandler.text;
+                            Debug.LogError(log);
+                            //ButtonHandler.GetInputFieldHandler().SetStatus(log);
+                        }
                         break;
                 }
             }

@@ -1,23 +1,26 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Net;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEditor;
 
 using Utils_NS;
 
 using DCC_Controller_NS;
-using UnityEditor;
 using static DCC_Controller_NS.DeviceInfo;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Net;
+
 
 namespace DCC_Controller_NS
 {
 
     public class ButtonHandler : MonoBehaviour
     {
+        public Button m_F01_Button;
+
         static int timeStamp = 0;
 
         static public Utils GetUtils()
@@ -59,7 +62,7 @@ namespace DCC_Controller_NS
  
         static void RequestResultCallback(string result)
         {
-            string log = "RequestResultCallback " + result;
+            string log = "Result: " + result;
             GetInputFieldHandler ().SetStatus(log);
         }
 
@@ -71,7 +74,7 @@ namespace DCC_Controller_NS
             Utils utils = GetUtils();
             if (utils != null)
             {
-                string log = "SendDeviceCommand " + ipAddress + "" + command;
+                string log = "WebCommand " + ipAddress + " " + command;
                 GetInputFieldHandler ().SetStatus(log);
                 utils.SendDeviceCommand(ipAddress, 0, command, RequestResultCallback);
             }
@@ -89,15 +92,36 @@ namespace DCC_Controller_NS
             SendHTMLCommand(data.ipAddress, channel, command);
         }
 
-        void SendF1_5Command(int channel, DeviceInfo.DeviceInfoData data)
+        void SendF0_4Command(int channel, DeviceInfo.DeviceInfoData data)
         {
-            string command = data.deviceID.ToString("X2") + (data.f1_5status + 0x80).ToString("X2"); ;
+            string command = data.deviceID.ToString("X2") + (data.f1_4status + 0x80).ToString("X2"); ;
             SendHTMLCommand(data.ipAddress, channel, command);
         }
 
-        void SendF6_10Command(int channel, DeviceInfo.DeviceInfoData data)
+        void SendF5_8Command(int channel, DeviceInfo.DeviceInfoData data)
         {
-            string command = data.deviceID.ToString("X2") + (data.f6_10status + 0xA0).ToString("X2"); ;
+            string command = data.deviceID.ToString("X2") + (data.f5_8status + 0xB0).ToString("X2"); ;
+            SendHTMLCommand(data.ipAddress, channel, command);
+        }
+        void SendF9_12Command(int channel, DeviceInfo.DeviceInfoData data)
+        {
+            string command = data.deviceID.ToString("X2") + (data.f9_12status + 0xA0).ToString("X2"); ;
+            SendHTMLCommand(data.ipAddress, channel, command);
+        }
+
+        void SendF13_20Command(int channel, DeviceInfo.DeviceInfoData data)
+        {
+            string command = data.deviceID.ToString("X2") + "DE" + (data.f13_20status).ToString("X2"); ;
+            SendHTMLCommand(data.ipAddress, channel, command);
+        }
+        void SendF21_28Command(int channel, DeviceInfo.DeviceInfoData data)
+        {
+            string command = data.deviceID.ToString("X2") + "DF" + (data.f21_28status).ToString("X2"); ;
+            SendHTMLCommand(data.ipAddress, channel, command);
+        }
+        void SendF29_36Command(int channel, DeviceInfo.DeviceInfoData data)
+        {
+            string command = data.deviceID.ToString("X2") + "D8" + (data.f29_36status).ToString("X2"); ;
             SendHTMLCommand(data.ipAddress, channel, command);
         }
 
@@ -154,6 +178,18 @@ namespace DCC_Controller_NS
             deviceInfo.m_changed = true;
         }
 
+        public void OnClickEmergencyStop()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            foreach (DeviceInfoData data1 in deviceInfo.m_devices) { 
+                data1.speed = 0;
+            }
+            string command = "0061";
+            SendHTMLCommand(data.ipAddress, 0, command);
+            deviceInfo.m_changed = true;
+        }
+
         public void OnClickExplicitCommand()
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
@@ -165,8 +201,16 @@ namespace DCC_Controller_NS
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f1_5status ^= 0x01;
-            SendF1_5Command(deviceInfo.m_channel, data);
+            data.f1_4status ^= 0x10;
+            ColorBlock cb = m_F01_Button.colors;
+            if ((data.f1_4status & 0x10) == 0)
+            {
+                cb.normalColor = new Color(0.9f, 0, 0);
+            } else
+            {
+                cb.normalColor = new Color(0, 0.9f, 0);
+            }
+            SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
 
         }
@@ -174,8 +218,8 @@ namespace DCC_Controller_NS
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f1_5status ^= 0x02;
-            SendF1_5Command(deviceInfo.m_channel, data);
+            data.f1_4status ^= 0x01;
+            SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
 
         }
@@ -183,8 +227,8 @@ namespace DCC_Controller_NS
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f1_5status ^= 0x04;
-            SendF1_5Command(deviceInfo.m_channel, data);
+            data.f1_4status ^= 0x02;
+            SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
 
         }
@@ -192,56 +236,216 @@ namespace DCC_Controller_NS
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f1_5status ^= 0x08;
-            SendF1_5Command(deviceInfo.m_channel, data);
+            data.f1_4status ^= 0x04;
+            SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
         }
         public void OnClickF05()
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f1_5status ^= 0x10;
-            SendF1_5Command(deviceInfo.m_channel, data);
+            data.f1_4status ^= 0x08;
+            SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
         }
         public void OnClickF06()
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f6_10status ^= 0x01;
-            SendF6_10Command(deviceInfo.m_channel, data);
+            data.f5_8status ^= 0x01;
+            SendF5_8Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
         }
         public void OnClickF07()
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f6_10status ^= 0x02;
-            SendF6_10Command(deviceInfo.m_channel, data);
+            data.f5_8status ^= 0x02;
+            SendF5_8Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
         }
         public void OnClickF08()
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f6_10status ^= 0x04;
-            SendF6_10Command(deviceInfo.m_channel, data);
+            data.f5_8status ^= 0x04;
+            SendF5_8Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
         }
         public void OnClickF09()
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f6_10status ^= 0x08;
-            SendF6_10Command(deviceInfo.m_channel, data);
+            data.f5_8status ^= 0x08;
+            SendF5_8Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
         }
         public void OnClickF10()
         {
             DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-            data.f6_10status ^= 0x10;
-            SendF6_10Command(deviceInfo.m_channel, data);
+            data.f9_12status ^= 0x01;
+            SendF9_12Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF11()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f9_12status ^= 0x02;
+            SendF9_12Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF12()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f9_12status ^= 0x04;
+            SendF9_12Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF13()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f9_12status ^= 0x08;
+            SendF9_12Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF14()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f13_20status ^= 0x01;
+            SendF13_20Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF15()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f13_20status ^= 0x02;
+            SendF13_20Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF16()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f13_20status ^= 0x04;
+            SendF13_20Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF17()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f13_20status ^= 0x08;
+            SendF13_20Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF18()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f13_20status ^= 0x10;
+            SendF13_20Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF19()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f13_20status ^= 0x20;
+            SendF13_20Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF20()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f13_20status ^= 0x40;
+            SendF13_20Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF21()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f13_20status ^= 0x80;
+            SendF13_20Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF22()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f21_28status ^= 0x01;
+            SendF21_28Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF23()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f21_28status ^= 0x02;
+            SendF21_28Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF24()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f21_28status ^= 0x04;
+            SendF21_28Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF25()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f21_28status ^= 0x08;
+            SendF21_28Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF26()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f21_28status ^= 0x10;
+            SendF21_28Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF27()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f21_28status ^= 0x20;
+            SendF21_28Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF28()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f21_28status ^= 0x40;
+            SendF21_28Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+        public void OnClickF29()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f21_28status ^= 0x80;
+            SendF21_28Command(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
+         public void OnClickF30()
+        {
+            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            data.f29_36status ^= 0x01;
+            SendF29_36Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
         }
     }

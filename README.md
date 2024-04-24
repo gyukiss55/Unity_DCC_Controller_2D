@@ -1,3 +1,4 @@
 # Unity_DCC_Controller_2D
--1.0 Add sources of Version 1.01
--1.1 Add missing packages
+ - 000 Add sources of Version 1.01
+ - 001 Add missing packages
+ - 002 F1-F30 function, Emergency stop, log

@@ -7,6 +7,8 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
+using DCC_Controller_NS;
+
 namespace DCC_Controller_NS
 {
 
@@ -19,8 +21,13 @@ namespace DCC_Controller_NS
             public string ipAddress = "";
             public int deviceID = 0;
             public int speed = 0;
-            public int f1_5status = 0;
-            public int f6_10status = 0;
+            public int f1_4status = 0;      // 0x80 + 04321 - 1byte command
+            public int f5_8status = 0;      // 0xB0 + 3210 - 1byte command
+            public int f9_12status = 0;     // 0xA0 + 3210 - 1byte command
+
+            public int f13_20status = 0;     // 0xDE + 76543210 - 2bytes command
+            public int f21_28status = 0;     // 0xDF + 76543210 - 2bytes command
+            public int f29_36status = 0;     // 0xD8 + 76543210 - 2bytes command
             public string explicitCommand = "";
         }
 
@@ -32,7 +39,12 @@ namespace DCC_Controller_NS
 
         public bool m_changed = false;
 
-        public string m_version = "1.01.01";
+
+        /// <summary>
+        /// "1.01.02" F1 - F30
+        /// </summary>
+
+        public string m_version = "1.01.02";
 
         [System.Serializable]
         public class DCCData
@@ -86,7 +98,9 @@ namespace DCC_Controller_NS
             if (File.Exists(destination)) file = File.OpenRead(destination);
             else
             {
-                Debug.LogError("File not found");
+                string log = "File not found";
+                Debug.LogError(log);
+                ButtonHandler.GetInputFieldHandler().SetError(log);
                 return;
             }
 
@@ -102,6 +116,7 @@ namespace DCC_Controller_NS
             {
                 string log = "Old version " + data.version + " - " + m_version;
                 Debug.LogError(log);
+                ButtonHandler.GetInputFieldHandler().SetError(log);
                 return;
 
             }
