@@ -21,6 +21,8 @@ namespace DCC_Controller_NS
             public string ipAddress = "";
             public int deviceID = 0;
             public int speed = 0;
+            public bool backward = false;
+            public int maxSpeed = 24;
             public int f1_4status = 0;      // 0x80 + 04321 - 1byte command
             public int f5_8status = 0;      // 0xB0 + 3210 - 1byte command
             public int f9_12status = 0;     // 0xA0 + 3210 - 1byte command
@@ -37,14 +39,20 @@ namespace DCC_Controller_NS
 
         public List<DeviceInfoData> m_devices = new List<DeviceInfoData>();
 
+        public int m_mode = 0;
+
+
         public bool m_changed = false;
+
+        public List<string> m_functionConfig = new List<string>();
+
 
 
         /// <summary>
         /// "1.01.02" F1 - F30
         /// </summary>
 
-        public string m_version = "1.01.02";
+        public string m_version = "1.01.05";
 
         [System.Serializable]
         public class DCCData
@@ -65,11 +73,13 @@ namespace DCC_Controller_NS
             foreach (DeviceInfoData dev in m_devices)
             {
                 dev.deviceID = deviceID++;
-                dev.ipAddress = "192.168.50.97";
+                dev.ipAddress = "192.168.2.97";
+                dev.maxSpeed = 24;
             }
             m_changed = true;
 
             LoadData();
+            LoadConfigData();
         }
 
 
@@ -100,7 +110,7 @@ namespace DCC_Controller_NS
             {
                 string log = "File not found";
                 Debug.LogError(log);
-                ButtonHandler.GetInputFieldHandler().SetError(log);
+                //CrossCaller.GetInputFieldHandler().SetError(log);
                 return;
             }
 
@@ -109,19 +119,50 @@ namespace DCC_Controller_NS
             file.Close();
             if (data.version == m_version)
             {
-               m_devices = data.devices;
-               m_changed = true;
+                m_devices = data.devices;
+                m_changed = true;
+                Debug.Log($"Load data: data.version{data.version}");
+                Debug.Log($" max spped: dev 0 {m_devices[0].maxSpeed}");
             }
             else
             {
                 string log = "Old version " + data.version + " - " + m_version;
                 Debug.LogError(log);
-                ButtonHandler.GetInputFieldHandler().SetError(log);
+                CrossCaller.GetInputFieldHandler().SetError(log);
                 return;
 
             }
         }
 
+        public void LoadConfigData()
+        {
+            string filePath = Application.persistentDataPath + "/ConfigFunctions.txt";
+
+            if (File.Exists(filePath))
+            {
+                StreamReader reader = new StreamReader(filePath);
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    m_functionConfig.Add(new string(line));
+                }
+                int index = 1;
+                foreach(string s in m_functionConfig)
+                {
+                    Debug.Log($"{index++}.{s}");
+
+                }
+                reader.Close();
+            }
+            else
+            {
+                string log = "File not found";
+                Debug.LogError(log);
+                CrossCaller.GetInputFieldHandler().SetError(log);
+                return;
+            }
+
+        }
     }
 
 }

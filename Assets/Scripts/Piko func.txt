@@ -1,0 +1,56 @@
+Function assignments
+FO
+Directional lighting
+F10
+Compressor
+F20
+Curve squeal sound on/off
+F1
+Sound on/off
+F11
+Cab door open/close
+F21
+Train light: Loco pulls
+F2
+Hom
+F12
+Engine room door open/close
+F22
+Train light: Loco pushes
+F3
+Conductors signal
+F13
+Cab window open/close
+F23
+Train brake
+F4
+Cab light FS1
+F14
+Coupling/Uncoupling
+F24
+compressed air release
+F5
+Cab light FS2
+F15
+Sanding
+F25
+Volume control
+F6
+Shunting mode / Shunting light
+F16
+Emergency brake
+F26
+Sound fader (tunnel mode)
+F7
+Engine room light
+F17
+braking resistor fan
+F8
+Upper beam
+F18
+Deactivating the braking noise
+F9
+Horn
+F19
+Rail clank sound on/off
+56473-90-7001 2019 

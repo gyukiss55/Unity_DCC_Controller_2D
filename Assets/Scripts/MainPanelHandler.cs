@@ -19,6 +19,8 @@ namespace DCC_Controller_NS
         public TMP_InputField m_DeviceID;
         public TMP_InputField m_speed;
         public TMP_InputField m_ExplicitCommand;
+        public Slider m_speedSlider;
+        public TMP_Dropdown m_functionDropDown;
         public Button m_F01;
         public Button m_F02;
         public Button m_F03;
@@ -57,67 +59,179 @@ namespace DCC_Controller_NS
         Color colorDarkOn = new Color(0.8f, 0.92f, 0.016f, 1); // yellow
         Color colorDarkOff = new Color(0, 0.8f, 0.8f, 1); // cyan
 
+        //Create a List of new Dropdown options
+        List<string> m_DropOptions = new List<string> 
+        {   "F0",
+            "F1",
+            "F2",
+            "F3",
+            "F4",
+            "F5",
+            "F6",
+            "F7",
+            "F8",
+            "F9",
+            "F10",
+            "F11",
+            "F12",
+            "F13",
+            "F14",
+            "F15",
+            "F16",
+            "F17",
+            "F18",
+            "F19",
+            "F20",
+            "F21",
+            "F22",
+            "F23",
+            "F24",
+            "F25",
+            "F26",
+            "F27",
+            "F28",
+            "F29"
+        };
+
         // Start is called before the first frame update
         void Start()
         {
             Utils.DebugLog("MainPanelHandler start...");
+
+
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                GameObject mainPanel = GameObject.Find("MainPanel");
+                if (mainPanel != null)
+                {
+//                    mainPanel.transform.transform.localScale = new Vector3(1f, 1f, 1f);
+                }
+            }
+            GameObject func = GameObject.Find("Functions");
+            Debug.Log($"func:{func}");
+            if (func != null)
+            {
+                Button[] buttons = func.GetComponentsInChildren<Button>();
+                int i = 0;
+                Debug.Log($"buttons:{buttons}");
+                foreach (Button button in buttons)
+                {
+                    string newText = new string ($"F{i}");
+                    i++;
+                    if (button.tag == "FunctionButton")
+                    {
+                        Debug.Log($"Taged name: {button.name} new name:{newText}");
+                    }
+                    button.GetComponentInChildren<TextMeshProUGUI>().text = newText;
+                }
+            }
+            m_functionDropDown.ClearOptions();
+            //Add the options created in the List above
+            m_functionDropDown.AddOptions(m_DropOptions);
 
         }
 
         // Update is called once per frame
         void Update()
         {
-            DeviceInfo info = GetDeviceInfo();
+            DeviceInfo info = CrossCaller.GetDeviceInfo();
             if (info.m_changed)
             {
                 UpdateInputFields();
+                CrossCaller.GetButtonHandler ().UpdateButton(info);
                 info.m_changed = false;
+
+                UpdateFunctionsOption(info);
             }
         }
 
-        static public DeviceInfo GetDeviceInfo()
+        void UpdateFunctionsOption (DeviceInfo info)
         {
-            DeviceInfo deviceInfo = null;
-            GameObject mainControl = GameObject.Find("MainControl");
-            if (mainControl == null)
+            Debug.Log("UpdateFunctionsOption");
+            if (info.m_functionConfig.Count > 0)
             {
-                Utils.DebugLog("MainControl not found!");
-                return deviceInfo;
-            }
-            deviceInfo = mainControl.GetComponent<DeviceInfo>();
-            if (deviceInfo == null)
-            {
-                Utils.DebugLog("DeviceInfo not found!");
-            }
-            return deviceInfo;
+                int index = info.m_channel - 1;
+                int id = info.m_devices[index].deviceID;
+                int funcIndex = -1;
+                Debug.Log($"deviceID {id}");
+                for (int i = 0; i < info.m_functionConfig.Count; i++)
+                {
+                    string s = info.m_functionConfig[i];
+                    int idFunc = -1;
+                    if (s.Length > 1 && s[0] == '#')
+                    {
+                        idFunc = 0;
+                        for(int j = 1; j < s.Length; j++)
+                        {
+                            if (s[j] >= '0' && s[j] <= '9')
+                            {
+                                idFunc = idFunc * 10 + (s[j] - '0');
+                                Debug.Log($"idFunc {idFunc}");
+                            }
+                            else
+                                break;
+                        }
+                        Debug.Log($"idFunc {idFunc}");
+                        if (idFunc == 0)
+                        {
+                            funcIndex = i;
+                            Debug.Log($"0/id {id}");
+                            Debug.Log($"idFunc {idFunc}");
+                            Debug.Log($"funcIndex {funcIndex}");
 
+                        }
+                        else
+                            if (id == idFunc)
+                        {
+                            funcIndex = i;
+                            Debug.Log($"1/id {id}");
+                            Debug.Log($"idFunc {idFunc}");
+                            Debug.Log($"funcIndex {funcIndex}");
+                            break;
+                        }
+                    }
+                }
+                Debug.Log($"funcIndex {funcIndex}");
+                if (funcIndex > 1)
+                {
+                    List<string> dropOptions = new List<string>();
+                    for (int i = funcIndex + 1; i < info.m_functionConfig.Count; i++)
+                    {
+                        if (info.m_functionConfig[i].Length > 1 && info.m_functionConfig[i][0] == 'F')
+                        {
+                            dropOptions.Add(info.m_functionConfig[i]);
+                            Debug.Log($"add {info.m_functionConfig[i]}");
+                        }
+                        else
+                            break;
+                    }
+                    if (dropOptions.Count > 0) {
+                        Debug.Log($"dropOptions {dropOptions.Count}");
+                        m_functionDropDown.ClearOptions();
+                        m_functionDropDown.AddOptions(dropOptions);
+                    } else
+                    {
+                        m_functionDropDown.ClearOptions();
+                        m_functionDropDown.AddOptions(m_DropOptions);
+                    }
+                }
+                else
+                {
+                    m_functionDropDown.ClearOptions();
+                    m_functionDropDown.AddOptions(m_DropOptions);
+                }
+            }
         }
 
         void UpdateTMP_InputField(Button tmp_button, int value, int mask)
         {
-            ColorBlock cb = tmp_button.colors;
-            if ((value & mask) == 0)
-            {
-                Color c = colorOff;
-                cb.normalColor = c;
-                cb.selectedColor = c;
-                cb.highlightedColor = colorHighOff;
-                cb.pressedColor = colorDarkOff;
-            } else
-            {
-                Color c = colorOn;
-                cb.normalColor = c;
-                cb.selectedColor = c;
-                cb.highlightedColor = colorHighOn;
-                cb.pressedColor = colorDarkOn;
-            }
-            tmp_button.colors = cb;
+            CrossCaller.GetUtils().UpdateButtonColor(tmp_button, (value & mask) != 0);
         }
 
 
         public void UpdateInputFields()
         {
-            DeviceInfo deviceInfo = GetDeviceInfo();
+            DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             int ch = deviceInfo.m_channel;
             DeviceInfo.DeviceInfoData deviceInfoData = deviceInfo.m_devices[ch - 1];
 
@@ -125,6 +239,7 @@ namespace DCC_Controller_NS
             m_IPAddress.text = deviceInfoData.ipAddress;
             m_DeviceID.text = string.Format("{0}", deviceInfoData.deviceID);
             m_speed.text = string.Format("{0}", deviceInfoData.speed);
+            m_speedSlider.value = deviceInfoData.speed / 28f;
 
             m_ExplicitCommand.text = deviceInfoData.explicitCommand;
 

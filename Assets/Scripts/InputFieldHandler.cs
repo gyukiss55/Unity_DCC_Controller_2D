@@ -91,20 +91,20 @@ namespace DCC_Controller_NS
 
         public void OnChangeIPAddress()
         {
-            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             deviceInfo.m_serverAddress = m_ipAddress.text;
             data.ipAddress = m_ipAddress.text;
         }
         public void OnChangeDeviceID()
         {
-            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.deviceID = Int32.Parse(m_DeviceID.text);
         }
         public void OnChangeExplicitCommand()
         {
-            DeviceInfo deviceInfo = MainPanelHandler.GetDeviceInfo();
+            DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             deviceInfo.m_serverAddress = m_ipAddress.text;
             data.explicitCommand = m_ExpComm.text;

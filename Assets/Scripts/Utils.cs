@@ -17,22 +17,7 @@ namespace Utils_NS
     public class Utils : MonoBehaviour
     {
 
-        public static void DebugLog(string debugLogString)
-        {
-            if (debugLogsEnabled)
-            {
-                UnityEngine.Debug.Log(debugLogString);
-            }
-        }
-
-        public static void SuspendToBackgroundOnAndroid()
-        {
-            AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer").
-               GetStatic<AndroidJavaObject>("currentActivity");
-            activity.Call<bool>("moveTaskToBack", true);
-        }
-
-        static bool wwwDebugLogs = true;
+         static bool wwwDebugLogs = true;
         static bool debugLogsEnabled = true;
         //static bool errorDlg = false;
 
@@ -41,9 +26,36 @@ namespace Utils_NS
 
         static string protocol = "http://";
 
-        public static void reset()
+        WaitForEndOfFrame waitEOF = new WaitForEndOfFrame();
+
+        Color colorOn = new Color(1, 0.92f, 0.016f, 1); // yellow
+        Color colorOff = new Color(0, 1, 1, 1); // cyan
+        Color colorHighOn = new Color(1, 1, 0.03f, 1); // yellow
+        Color colorHighOff = new Color(0.2f, 1, 1, 1); // cyan
+        Color colorDarkOn = new Color(0.8f, 0.92f, 0.016f, 1); // yellow
+        Color colorDarkOff = new Color(0, 0.8f, 0.8f, 1); // cyan
+
+
+        public void UpdateButtonColor(Button tmp_button, bool status)
         {
-            protocol = "http://";
+            ColorBlock cb = tmp_button.colors;
+            if (status)
+            {
+                Color c = colorOn;
+                cb.normalColor = c;
+                cb.selectedColor = c;
+                cb.highlightedColor = colorHighOn;
+                cb.pressedColor = colorDarkOn;
+            }
+            else
+            {
+                Color c = colorOff;
+                cb.normalColor = c;
+                cb.selectedColor = c;
+                cb.highlightedColor = colorHighOff;
+                cb.pressedColor = colorDarkOff;
+            }
+            tmp_button.colors = cb;
         }
 
         static string sendDCCCommandUri(string ipAddress) { return protocol + ipAddress + "/ec"; }
@@ -56,54 +68,12 @@ namespace Utils_NS
             }
         }
 
-        WaitForEndOfFrame waitEOF = new WaitForEndOfFrame();
-
         public void SendDeviceCommand(string ipAddress, int channel, string cmd, RequestResultCallback callback)
         {
-            StartCoroutine(ExecuteGetRequestV1(sendDCCCommandUri(ipAddress) + "?" + "ch=" + channel + "&dcc=" + cmd, callback, true));
-
-            //StartCoroutine(ExecuteGetRequestV1("https://www.example.com", callback, true));
+            StartCoroutine(ExecuteGetRequest(sendDCCCommandUri(ipAddress) + "?" + "ch=" + channel + "&dcc=" + cmd, callback, true));
         }
 
-        IEnumerator ExecuteGetRequestV2(string uri, RequestResultCallback callback, bool debug = false)
-        {
-            using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
-            {
-                // Request and wait for the desired page.
-                yield return webRequest.SendWebRequest();
-
-                string[] pages = uri.Split('/');
-                int page = pages.Length - 1;
-
-                switch (webRequest.result)
-                {
-                    case UnityWebRequest.Result.ConnectionError:
-                    case UnityWebRequest.Result.DataProcessingError:
-                        {
-                            string log = pages[page] + ": Error: " + webRequest.error;
-                            Debug.LogError(log);
-                            ButtonHandler.GetInputFieldHandler().SetError(log);
-                        }
-                        break;
-                    case UnityWebRequest.Result.ProtocolError:
-                        {
-                            string log = pages[page] + ": HTTP Error: " + webRequest.error;
-                            Debug.LogError(log);
-                            ButtonHandler.GetInputFieldHandler().SetError(log);
-                        }
-                        break;
-                    case UnityWebRequest.Result.Success:
-                        {
-                            string log = pages[page] + ":\nReceived: " + webRequest.downloadHandler.text;
-                            Debug.LogError(log);
-                            //ButtonHandler.GetInputFieldHandler().SetStatus(log);
-                        }
-                        break;
-                }
-            }
-        }
-
-        IEnumerator ExecuteGetRequestV1(string uri, RequestResultCallback callback, bool debug = false)
+        IEnumerator ExecuteGetRequest(string uri, RequestResultCallback callback, bool debug = false)
         {
             yield return waitEOF;
 
@@ -139,42 +109,19 @@ namespace Utils_NS
             }
         }
 
-        IEnumerator executePostRequest(string uri, RequestResultCallback callback, bool debug = false)
+        public static void DebugLog(string debugLogString)
         {
-            yield return waitEOF;
-
-            if (wwwDebugLogs || debug)
-                UnityEngine.Debug.Log("Post request:" + uri);
-
-            WWWForm form = new WWWForm();
-            using (var w = UnityWebRequest.Post(uri, form))
+            if (debugLogsEnabled)
             {
-                w.certificateHandler = new AcceptAllCertificatesSignedWithASpecificPublicKey();
-                yield return w.SendWebRequest();
-                if (w.result != UnityWebRequest.Result.Success)
-                {
-                    UnityEngine.Debug.Log(w.error);
-                    UnityEngine.Debug.Log("Error: " + ((w.result == UnityWebRequest.Result.ProtocolError) ? "HTTP error" : "Network error"));
-                    UnityEngine.Debug.Log("URI was: " + uri);
-                    string result = "{ \"code\": " + ((w.result == UnityWebRequest.Result.ConnectionError) ? 999 : w.responseCode) + " , \"error\" : \"" + w.error + "\" }";
-                    if (wwwDebugLogs || debug) UnityEngine.Debug.Log("Result: " + result);
-                    //if (errorDlg) PopupManager.instance.alertDialog("lblError", w.error + "\n\nURI: " + uri);
-                    if (callback != null)
-                    {
-                        callback(result);
-                    }
-                }
-                else
-                {
-                    if (wwwDebugLogs || debug) UnityEngine.Debug.Log("Result: " + w.downloadHandler.text);
-                    if (callback != null)
-                    {
-                        string result = "{ \"code\": 0 , \"error\" : \"No error\" }";
-                        callback(result);
-                        //callback(w.downloadHandler.text.Trim());
-                    }
-                }
+                UnityEngine.Debug.Log(debugLogString);
             }
+        }
+
+        public static void SuspendToBackgroundOnAndroid()
+        {
+            AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer").
+               GetStatic<AndroidJavaObject>("currentActivity");
+            activity.Call<bool>("moveTaskToBack", true);
         }
 
     }
