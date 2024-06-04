@@ -110,6 +110,7 @@ namespace DCC_Controller_NS
             {
                 string log = "File not found";
                 Debug.LogError(log);
+                //CrossCaller.GetInputFieldHandler().SetError(log);
                 return;
             }
 
@@ -149,6 +150,7 @@ namespace DCC_Controller_NS
                 foreach(string s in m_functionConfig)
                 {
                     Debug.Log($"{index++}.{s}");
+
                 }
                 reader.Close();
             }

@@ -15,7 +15,6 @@ namespace DCC_Controller_NS
         DeviceInfo deviceInfo = null;
         InputFieldHandler inputFieldHandler = null;
         ButtonHandler buttonHandler = null;
-        MainPanelHandler mainPanelHandler = null;
 
 
         // Start is called before the first frame update
@@ -37,7 +36,7 @@ namespace DCC_Controller_NS
                 instance.utils = mainControl.GetComponent<Utils>();
                 if (instance.utils == null)
                 {
-                    Debug.Log("Utils not found!");
+                    Debug.Log("DeviceInfo not found!");
                 }
  
             }
@@ -101,27 +100,6 @@ namespace DCC_Controller_NS
 
             }
             return instance.buttonHandler;
-
-        }
-
-        static public MainPanelHandler GetMainPanelHandler()
-        {
-            if (instance.mainPanelHandler == null)
-            {
-                GameObject mainPanel = GameObject.Find("MainPanel");
-                if (mainPanel == null)
-                {
-                    Debug.Log("MainPanel not found!");
-                    return instance.mainPanelHandler;
-                }
-                instance.mainPanelHandler = mainPanel.GetComponent<MainPanelHandler>();
-                if (instance.mainPanelHandler == null)
-                {
-                    Debug.Log("MainPanelHandler not found!");
-                }
-
-            }
-            return instance.mainPanelHandler;
 
         }
 

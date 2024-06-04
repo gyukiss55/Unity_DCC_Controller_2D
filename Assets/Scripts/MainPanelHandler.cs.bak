@@ -21,8 +21,6 @@ namespace DCC_Controller_NS
         public TMP_InputField m_ExplicitCommand;
         public Slider m_speedSlider;
         public TMP_Dropdown m_functionDropDown;
-        public Sprite m_ImageOn;
-        public Sprite m_ImageOff;
         public Button m_F01;
         public Button m_F02;
         public Button m_F03;
@@ -54,8 +52,6 @@ namespace DCC_Controller_NS
         public Button m_F29;
         public Button m_F30;
 
-        bool m_func_change_disable = false;
-
         Color colorOn = new Color(1, 0.92f, 0.016f, 1); // yellow
         Color colorOff = new Color(0, 1, 1, 1); // cyan
         Color colorHighOn = new Color(1, 1, 0.03f, 1); // yellow
@@ -64,7 +60,7 @@ namespace DCC_Controller_NS
         Color colorDarkOff = new Color(0, 0.8f, 0.8f, 1); // cyan
 
         //Create a List of new Dropdown options
-        List<string> m_DropOptionTexts = new List<string> 
+        List<string> m_DropOptions = new List<string> 
         {   "F0",
             "F1",
             "F2",
@@ -112,24 +108,27 @@ namespace DCC_Controller_NS
                 }
             }
             GameObject func = GameObject.Find("Functions");
+            Debug.Log($"func:{func}");
             if (func != null)
             {
                 Button[] buttons = func.GetComponentsInChildren<Button>();
                 int i = 0;
+                Debug.Log($"buttons:{buttons}");
                 foreach (Button button in buttons)
                 {
                     string newText = new string ($"F{i}");
                     i++;
                     if (button.tag == "FunctionButton")
                     {
-                        button.GetComponentInChildren<TextMeshProUGUI>().text = newText;
+                        Debug.Log($"Taged name: {button.name} new name:{newText}");
                     }
+                    button.GetComponentInChildren<TextMeshProUGUI>().text = newText;
                 }
             }
             m_functionDropDown.ClearOptions();
-            m_functionDropDown.AddOptions(m_DropOptionTexts);
+            //Add the options created in the List above
+            m_functionDropDown.AddOptions(m_DropOptions);
 
-            m_func_change_disable = false;
         }
 
         // Update is called once per frame
@@ -141,35 +140,20 @@ namespace DCC_Controller_NS
                 UpdateInputFields();
                 CrossCaller.GetButtonHandler ().UpdateButton(info);
                 info.m_changed = false;
-                if (m_func_change_disable)
-                {
-                    Debug.Log($"m_func_change_disable TRUE {m_functionDropDown.value}");
 
-                    m_func_change_disable = false;
-                }
-                else
-                {
-                    Debug.Log($"m_func_change_disable FALSE {m_functionDropDown.value}");
-
-                    UpdateFunctionsOption(info);
-                }
+                UpdateFunctionsOption(info);
             }
-        }
-
-        public bool IsDropdownChangeEnable ()
-        {
-            return !m_func_change_disable;
         }
 
         void UpdateFunctionsOption (DeviceInfo info)
         {
             Debug.Log("UpdateFunctionsOption");
-            int indexLast = m_functionDropDown.value;
             if (info.m_functionConfig.Count > 0)
             {
                 int index = info.m_channel - 1;
                 int id = info.m_devices[index].deviceID;
                 int funcIndex = -1;
+                Debug.Log($"deviceID {id}");
                 for (int i = 0; i < info.m_functionConfig.Count; i++)
                 {
                     string s = info.m_functionConfig[i];
@@ -182,54 +166,61 @@ namespace DCC_Controller_NS
                             if (s[j] >= '0' && s[j] <= '9')
                             {
                                 idFunc = idFunc * 10 + (s[j] - '0');
+                                Debug.Log($"idFunc {idFunc}");
                             }
                             else
                                 break;
                         }
+                        Debug.Log($"idFunc {idFunc}");
                         if (idFunc == 0)
                         {
                             funcIndex = i;
+                            Debug.Log($"0/id {id}");
+                            Debug.Log($"idFunc {idFunc}");
+                            Debug.Log($"funcIndex {funcIndex}");
+
                         }
-                        else if (id == idFunc)
+                        else
+                            if (id == idFunc)
                         {
                             funcIndex = i;
+                            Debug.Log($"1/id {id}");
+                            Debug.Log($"idFunc {idFunc}");
+                            Debug.Log($"funcIndex {funcIndex}");
                             break;
                         }
                     }
                 }
+                Debug.Log($"funcIndex {funcIndex}");
                 if (funcIndex > 1)
                 {
-                    List<TMP_Dropdown.OptionData> dropOptions = new List<TMP_Dropdown.OptionData>();
+                    List<string> dropOptions = new List<string>();
                     for (int i = funcIndex + 1; i < info.m_functionConfig.Count; i++)
                     {
                         if (info.m_functionConfig[i].Length > 1 && info.m_functionConfig[i][0] == 'F')
                         {
-                            TMP_Dropdown.OptionData od = new TMP_Dropdown.OptionData ();
-                            od.text = info.m_functionConfig[i].ToString();
-                            od.image = m_ImageOff;
-                            dropOptions.Add(od);
+                            dropOptions.Add(info.m_functionConfig[i]);
+                            Debug.Log($"add {info.m_functionConfig[i]}");
                         }
                         else
                             break;
                     }
                     if (dropOptions.Count > 0) {
+                        Debug.Log($"dropOptions {dropOptions.Count}");
                         m_functionDropDown.ClearOptions();
                         m_functionDropDown.AddOptions(dropOptions);
                     } else
                     {
                         m_functionDropDown.ClearOptions();
-                        m_functionDropDown.AddOptions(m_DropOptionTexts);
+                        m_functionDropDown.AddOptions(m_DropOptions);
                     }
                 }
                 else
                 {
                     m_functionDropDown.ClearOptions();
-                    m_functionDropDown.AddOptions(m_DropOptionTexts);
+                    m_functionDropDown.AddOptions(m_DropOptions);
                 }
             }
-            //m_functionDropDown.value = indexLast;
-            //m_func_change_disable = true;
-            //Debug.Log($"m_func_change_disable TRUE {m_functionDropDown.value}");
         }
 
         void UpdateTMP_InputField(Button tmp_button, int value, int mask)
@@ -248,10 +239,7 @@ namespace DCC_Controller_NS
             m_IPAddress.text = deviceInfoData.ipAddress;
             m_DeviceID.text = string.Format("{0}", deviceInfoData.deviceID);
             m_speed.text = string.Format("{0}", deviceInfoData.speed);
-            if (deviceInfoData.speed > 0)
-                m_speedSlider.value = deviceInfoData.speed / 28f + 0.001f;
-            else
-                m_speedSlider.value = deviceInfoData.speed;
+            m_speedSlider.value = deviceInfoData.speed / 28f;
 
             m_ExplicitCommand.text = deviceInfoData.explicitCommand;
 

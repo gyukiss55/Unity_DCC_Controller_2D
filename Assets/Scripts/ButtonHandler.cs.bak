@@ -12,10 +12,7 @@ using Utils_NS;
 
 using DCC_Controller_NS;
 using static DCC_Controller_NS.DeviceInfo;
-using System;
-using System.Linq;
-using System.Threading;
-//using UnityEngine.UIElements;
+
 
 namespace DCC_Controller_NS
 {
@@ -29,24 +26,15 @@ namespace DCC_Controller_NS
         public Button m_DirectionButton2;
         public Slider m_SpeedSlider;
         public TMP_Dropdown m_FunctionDropdown;
-        List<Func<int>> m_FunctionList = new List<Func<int>>();
 
         static int timeStamp = 0;
 
         bool m_Inicialized = false;
 
-        float m_lastTime = 0;
-        int m_lastFunc = -1;
-        // WaitForSend coroutine
-        static float speedPrev = 0;
-        static float timePrev = 0;
-        static int  callNumber = 0;
-        private static Mutex mutexSpeed = new Mutex();
-
         class ControlTransformation
         {
             public Vector3 position;
-//            public Vector3 scale;
+            public Vector3 scale;
         };
 
         class ViewParams
@@ -64,36 +52,6 @@ namespace DCC_Controller_NS
             viewParams.functionControl = new List<ControlTransformation>();
             viewParams.group1Control = new List<ControlTransformation>();
             viewParams.group2Control = new List<ControlTransformation>();
-            m_FunctionList.Add(OnClickF01Ref);
-            m_FunctionList.Add(OnClickF02Ref);
-            m_FunctionList.Add(OnClickF03Ref);
-            m_FunctionList.Add(OnClickF04Ref);
-            m_FunctionList.Add(OnClickF05Ref);
-            m_FunctionList.Add(OnClickF06Ref);
-            m_FunctionList.Add(OnClickF07Ref);
-            m_FunctionList.Add(OnClickF08Ref);
-            m_FunctionList.Add(OnClickF09Ref);
-            m_FunctionList.Add(OnClickF10Ref);
-            m_FunctionList.Add(OnClickF11Ref);
-            m_FunctionList.Add(OnClickF12Ref);
-            m_FunctionList.Add(OnClickF13Ref);
-            m_FunctionList.Add(OnClickF14Ref);
-            m_FunctionList.Add(OnClickF15Ref);
-            m_FunctionList.Add(OnClickF16Ref);
-            m_FunctionList.Add(OnClickF17Ref);
-            m_FunctionList.Add(OnClickF18Ref);
-            m_FunctionList.Add(OnClickF19Ref);
-            m_FunctionList.Add(OnClickF20Ref);
-            m_FunctionList.Add(OnClickF21Ref);
-            m_FunctionList.Add(OnClickF22Ref);
-            m_FunctionList.Add(OnClickF23Ref);
-            m_FunctionList.Add(OnClickF24Ref);
-            m_FunctionList.Add(OnClickF25Ref);
-            m_FunctionList.Add(OnClickF26Ref);
-            m_FunctionList.Add(OnClickF27Ref);
-            m_FunctionList.Add(OnClickF28Ref);
-            m_FunctionList.Add(OnClickF29Ref);
-            m_FunctionList.Add(OnClickF30Ref);
         }
 
 
@@ -110,6 +68,8 @@ namespace DCC_Controller_NS
 
         void SetView (int viewMode)
         {
+            Debug.Log($"SetView {viewMode}");
+
             if (viewParams.functionControl.Count == 0)
             {
                 const float offsetX = 800;
@@ -140,16 +100,19 @@ namespace DCC_Controller_NS
             if (viewParams.functionControl.Count > viewMode)
             {
                 m_Functions.transform.position = viewParams.functionControl[viewMode].position;
+                Debug.Log($"m_Functions position {viewParams.functionControl[viewMode].position}");
             }
 
             if (viewParams.group1Control.Count > viewMode)
             {
                 m_Group1.transform.position = viewParams.group1Control[viewMode].position;
+                Debug.Log($"m_Group1 position {viewParams.group1Control[viewMode].position}");
             }
 
             if (viewParams.group2Control.Count > viewMode)
             {
                 m_Group2.transform.position = viewParams.group2Control[viewMode].position;
+                Debug.Log($"m_Group2 position {viewParams.group2Control[viewMode].position}");
             }
 
 
@@ -172,7 +135,7 @@ namespace DCC_Controller_NS
             {
                 string log = "WebCommand " + ipAddress + " " + command;
                 CrossCaller.GetInputFieldHandler ().SetStatus(log);
-                utils.SendDeviceCommand(ipAddress, channel - 1, command, RequestResultCallback);
+                utils.SendDeviceCommand(ipAddress, 0, command, RequestResultCallback);
             }
 
         }
@@ -180,11 +143,17 @@ namespace DCC_Controller_NS
         void SendSpeedCommand(int channel, DeviceInfo.DeviceInfoData data)
         {
             bool backward = data.backward;
+            Debug.Log($"SendSpeedCommand data.speed:{data.speed}");
             int speedTmp = 0;
             if (data.speed > 0)
                 speedTmp = (((data.speed + 1) / 2) + 1);
             if (data.speed > 0 && ((data.speed % 2) == 0))
                 speedTmp += 0x10;
+            Debug.Log($"SendSpeedCommand speedTmp:{speedTmp}");
+            if (backward)
+                Debug.Log($"SendSpeedCommand backward");
+            else
+                Debug.Log($"SendSpeedCommand forward");
 
             string command = "";
 
@@ -192,6 +161,9 @@ namespace DCC_Controller_NS
             if (backward)
                 speedPrefix = 0x40;
             command = data.deviceID.ToString("X2") + (speedPrefix + speedTmp).ToString("X2"); 
+
+            Debug.Log($"SendSpeedCommand {command}");
+
             SendHTMLCommand(data.ipAddress, channel, command);
         }
 
@@ -278,6 +250,8 @@ namespace DCC_Controller_NS
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            Debug.Log($"OnClickSpeedUp maxSpeed {data.maxSpeed}");
+//            if (data.speed < data.maxSpeed)
             if (data.speed < 28)
             {
                 data.speed++;
@@ -290,6 +264,7 @@ namespace DCC_Controller_NS
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            Debug.Log($"OnClickSpeedDown maxSpeed {data.maxSpeed}");
             if (data.speed > 0)
             {
                 data.speed--;
@@ -312,6 +287,7 @@ namespace DCC_Controller_NS
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            //data.speed = data.maxSpeed;
             data.speed = 28;
             SendSpeedCommand(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
@@ -372,368 +348,267 @@ namespace DCC_Controller_NS
             SendHTMLCommand(data.ipAddress, deviceInfo.m_channel, command);
         }
 
-        private IEnumerator WaitForSend(float speed)
-        {
-
-            bool execute = false;
-            float timeNow = Time.deltaTime * 1000f;
-            float deltaTime = timeNow - timePrev;
-            int callNumberNow = 0; 
-
-
-            mutexSpeed.WaitOne();
-            speedPrev = speed;
-            timePrev = timeNow;
-            callNumber++;
-            callNumberNow = callNumber;
-            mutexSpeed.ReleaseMutex();
-
-            if (deltaTime < 100)
-            {
-                yield return new WaitForSeconds(0.1f);
-
-            }
-            if (callNumberNow == callNumber)
-                execute = true;
-
-            if (execute)
-            {
-                DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
-                DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
-                data.speed = (int)(28f * speed);
-                SendSpeedCommand(deviceInfo.m_channel, data);
-                deviceInfo.m_changed = true;
-            }
- 
-        }
-
         public void OnValueChangeSlider()
         {
             float v = m_SpeedSlider.value;
-            IEnumerator coroutine = WaitForSend(v);
-            StartCoroutine(coroutine);
-         }
+            Debug.Log($"OnValueChangeSlider:{v}");
+            DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
+            DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
+            //data.speed = data.maxSpeed;
+            data.speed = (int)(28f * v);
+            SendSpeedCommand(deviceInfo.m_channel, data);
+            deviceInfo.m_changed = true;
+        }
 
         public void OnValueChangeDropDown()
         {
-            float millis = Time.realtimeSinceStartup * 1000f;
-            int index = m_FunctionDropdown.value;
-            if ((millis - m_lastTime) < 100f && m_lastFunc == index) {
-                return;
-            }
-            m_lastFunc = index;
-            m_lastTime = millis;
-
-            if (index >= 0 && index < m_FunctionList.Count)
-                m_FunctionList[index]();
-
             string s = m_FunctionDropdown.value.ToString ();
+            Debug.Log($"OnValueChangeDropDown:{s}");
         }
 
-        int  OnClickF01Ref()
+        public void OnClickF01()
         {
-
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f1_4status ^= 0x10;
             SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
-        }
 
-        public int OnClickF02Ref()
+        }
+        public void OnClickF02()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f1_4status ^= 0x01;
             SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
 
         }
-        public int OnClickF03Ref()
+        public void OnClickF03()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f1_4status ^= 0x02;
             SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
 
         }
-        public int OnClickF04Ref()
+        public void OnClickF04()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f1_4status ^= 0x04;
             SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-       public int OnClickF05Ref()
+        public void OnClickF05()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f1_4status ^= 0x08;
             SendF0_4Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF06Ref()
+        public void OnClickF06()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f5_8status ^= 0x01;
             SendF5_8Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF07Ref()
+        public void OnClickF07()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f5_8status ^= 0x02;
             SendF5_8Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF08Ref()
+        public void OnClickF08()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f5_8status ^= 0x04;
             SendF5_8Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF09Ref()
+        public void OnClickF09()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f5_8status ^= 0x08;
             SendF5_8Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF10Ref()
+        public void OnClickF10()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f9_12status ^= 0x01;
             SendF9_12Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF11Ref()
+        public void OnClickF11()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f9_12status ^= 0x02;
             SendF9_12Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF12Ref()
+        public void OnClickF12()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f9_12status ^= 0x04;
             SendF9_12Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF13Ref()
+        public void OnClickF13()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f9_12status ^= 0x08;
             SendF9_12Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF14Ref()
+        public void OnClickF14()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f13_20status ^= 0x01;
             SendF13_20Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF15Ref()
+        public void OnClickF15()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f13_20status ^= 0x02;
             SendF13_20Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF16Ref()
+        public void OnClickF16()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f13_20status ^= 0x04;
             SendF13_20Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF17Ref()
+        public void OnClickF17()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f13_20status ^= 0x08;
             SendF13_20Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF18Ref()
+        public void OnClickF18()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f13_20status ^= 0x10;
             SendF13_20Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF19Ref()
+        public void OnClickF19()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f13_20status ^= 0x20;
             SendF13_20Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF20Ref()
+        public void OnClickF20()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f13_20status ^= 0x40;
             SendF13_20Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF21Ref()
+        public void OnClickF21()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f13_20status ^= 0x80;
             SendF13_20Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF22Ref()
+        public void OnClickF22()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f21_28status ^= 0x01;
             SendF21_28Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF23Ref()
+        public void OnClickF23()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f21_28status ^= 0x02;
             SendF21_28Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF24Ref()
+        public void OnClickF24()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f21_28status ^= 0x04;
             SendF21_28Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF25Ref()
+        public void OnClickF25()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f21_28status ^= 0x08;
             SendF21_28Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF26Ref()
+        public void OnClickF26()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f21_28status ^= 0x10;
             SendF21_28Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF27Ref()
+        public void OnClickF27()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f21_28status ^= 0x20;
             SendF21_28Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF28Ref()
+        public void OnClickF28()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f21_28status ^= 0x40;
             SendF21_28Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF29Ref()
+        public void OnClickF29()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f21_28status ^= 0x80;
             SendF21_28Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public int OnClickF30Ref()
+         public void OnClickF30()
         {
             DeviceInfo deviceInfo = CrossCaller.GetDeviceInfo();
             DeviceInfo.DeviceInfoData data = deviceInfo.m_devices[deviceInfo.m_channel - 1];
             data.f29_36status ^= 0x01;
             SendF29_36Command(deviceInfo.m_channel, data);
             deviceInfo.m_changed = true;
-            return 0;
         }
-        public void OnClickF01() => OnClickF01Ref();
-        public void OnClickF02() => OnClickF02Ref();
-        public void OnClickF03() => OnClickF03Ref();
-        public void OnClickF04() => OnClickF04Ref();
-        public void OnClickF05() => OnClickF05Ref();
-        public void OnClickF06() => OnClickF06Ref();
-        public void OnClickF07() => OnClickF07Ref();
-        public void OnClickF08() => OnClickF08Ref();
-        public void OnClickF09() => OnClickF09Ref();
-        public void OnClickF10() => OnClickF10Ref();
-        public void OnClickF11() => OnClickF11Ref();
-        public void OnClickF12() => OnClickF12Ref();
-        public void OnClickF13() => OnClickF13Ref();
-        public void OnClickF14() => OnClickF14Ref();
-        public void OnClickF15() => OnClickF15Ref();
-        public void OnClickF16() => OnClickF16Ref();
-        public void OnClickF17() => OnClickF17Ref();
-        public void OnClickF18() => OnClickF18Ref();
-        public void OnClickF19() => OnClickF19Ref();
-        public void OnClickF20() => OnClickF20Ref();
-        public void OnClickF21() => OnClickF21Ref();
-        public void OnClickF22() => OnClickF22Ref();
-        public void OnClickF23() => OnClickF23Ref();
-        public void OnClickF24() => OnClickF24Ref();
-        public void OnClickF25() => OnClickF25Ref();
-        public void OnClickF26() => OnClickF26Ref();
-        public void OnClickF27() => OnClickF27Ref();
-        public void OnClickF28() => OnClickF28Ref();
-        public void OnClickF29() => OnClickF29Ref();
-        public void OnClickF30() => OnClickF30Ref();
     }
 
 }
